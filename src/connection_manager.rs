@@ -14,6 +14,8 @@ use crossbeam::{
     channel::{Receiver, Sender, unbounded},
 };
 use dashmap::DashMap;
+use quinn::rustls::DEFAULT_VERSIONS;
+use quinn::rustls::crypto::ring;
 use quinn::{
     ClientConfig, ConnectError, Connecting, ConnectionError, Endpoint, Incoming, RecvStream,
     ServerConfig, TransportConfig,
@@ -256,7 +258,9 @@ impl ConnectionManager {
 
         endpoint.set_default_client_config(ClientConfig::new(Arc::new(
             QuicClientConfig::try_from(
-                rustls::ClientConfig::builder()
+                rustls::ClientConfig::builder_with_provider(ring::default_provider().into())
+                    .with_protocol_versions(DEFAULT_VERSIONS)
+                    .unwrap()
                     .dangerous()
                     .with_custom_certificate_verifier(SkipServerVerification::new())
                     .with_no_client_auth(),
