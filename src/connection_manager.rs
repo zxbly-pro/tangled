@@ -225,7 +225,7 @@ impl ConnectionManager {
 
         let server_config = default_server_config();
 
-        let mut endpoint = if is_server {
+        let endpoint = if is_server {
             // Endpoint::server(config, bind_addr).map_err(TangledInitError::CouldNotCreateEndpoint)?
             let socket = Socket::new(Domain::for_address(bind_addr), Type::DGRAM, None)
                 .map_err(TangledInitError::CouldNotCreateEndpoint)?;
