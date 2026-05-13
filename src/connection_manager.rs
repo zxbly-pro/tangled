@@ -154,7 +154,7 @@ pub(crate) struct OutboundMessage {
     pub src: PeerId,
     pub dst: Destination,
     pub reliability: Reliability,
-    pub data: Box<[u8]>,
+    pub data: Vec<u8>,
 }
 
 pub(crate) type Channel<T> = (Sender<T>, Receiver<T>);
@@ -323,10 +323,10 @@ impl ConnectionManager {
                     .await;
                     return;
                 }
-                if self.is_server && msg.dst.is_broadcast() {
-                    self.server_send_to_peers(msg.clone()).await;
-                }
                 if msg.dst.is_broadcast() || intended_for_me {
+                    if self.is_server && msg.dst.is_broadcast() {
+                        self.server_send_to_peers(msg.clone()).await;
+                    }
                     self.shared
                         .inbound_channel
                         .0
@@ -335,6 +335,8 @@ impl ConnectionManager {
                             data: msg.data,
                         }))
                         .expect("channel to be open");
+                } else if self.is_server && msg.dst.is_broadcast() {
+                    self.server_send_to_peers(msg).await;
                 }
             }
             InternalMessage::RemoteConnected(peer_id) => {

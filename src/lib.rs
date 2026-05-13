@@ -75,20 +75,20 @@ impl Peer {
     pub fn send(
         &self,
         destination: PeerId,
-        data: &[u8],
+        data: Vec<u8>,
         reliability: Reliability,
     ) -> Result<(), NetError> {
         self.send_internal(Destination::One(destination), data, reliability)
     }
 
-    pub fn broadcast(&self, data: &[u8], reliability: Reliability) -> Result<(), NetError> {
+    pub fn broadcast(&self, data: Vec<u8>, reliability: Reliability) -> Result<(), NetError> {
         self.send_internal(Destination::Broadcast, data, reliability)
     }
 
     fn send_internal(
         &self,
         destination: Destination,
-        data: &[u8],
+        data: Vec<u8>,
         reliability: Reliability,
     ) -> Result<(), NetError> {
         self.shared
@@ -96,7 +96,7 @@ impl Peer {
             .send(OutboundMessage {
                 src: self.my_id().expect("expected to know my_id by this point"),
                 dst: destination,
-                data: data.into(),
+                data,
                 reliability,
             })
             .expect("channel to be open");
@@ -170,12 +170,13 @@ mod test {
         tokio::time::sleep(Duration::from_millis(100)).await;
         assert_eq!(peer.shared.remote_peers.len(), 2);
         let data = vec![128, 51, 32];
-        peer.send(PeerId(0), &data, Reliability::Reliable).unwrap();
+        peer.send(PeerId(0), data.clone(), Reliability::Reliable)
+            .unwrap();
         tokio::time::sleep(Duration::from_millis(10)).await;
         let host_events: Vec<_> = host.recv().collect();
         assert!(host_events.contains(&NetworkEvent::PeerConnected(PeerId(1))));
         assert!(host_events.contains(&NetworkEvent::Message(Message {
-            data: data.into_boxed_slice(),
+            data,
             src: PeerId(1)
         })));
         let peer_events: Vec<_> = peer.recv().collect();
@@ -202,7 +203,9 @@ mod test {
         assert_eq!(host.shared.remote_peers.len(), 3);
 
         let data = vec![123, 112, 51, 23];
-        peer1.broadcast(&data, Reliability::Reliable).unwrap();
+        peer1
+            .broadcast(data.clone(), Reliability::Reliable)
+            .unwrap();
         tokio::time::sleep(Duration::from_millis(10)).await;
 
         let host_events: Vec<_> = dbg!(host.recv().collect());
@@ -211,15 +214,15 @@ mod test {
 
         assert!(peer2_events.contains(&NetworkEvent::Message(Message {
             src: peer1.my_id().unwrap(),
-            data: data.clone().into_boxed_slice(),
+            data: data.clone(),
         })));
         assert!(!peer1_events.contains(&NetworkEvent::Message(Message {
             src: peer1.my_id().unwrap(),
-            data: data.clone().into_boxed_slice(),
+            data: data.clone(),
         })));
         assert!(host_events.contains(&NetworkEvent::Message(Message {
             src: peer1.my_id().unwrap(),
-            data: data.into_boxed_slice(),
+            data: data,
         })));
     }
 
@@ -270,7 +273,7 @@ mod test {
         peer1
             .send(
                 peer2.my_id().unwrap(),
-                &[123, 32, 51],
+                vec![123, 32, 51],
                 Reliability::Reliable,
             )
             .unwrap();
@@ -278,7 +281,7 @@ mod test {
         let events = peer2.recv().collect::<Vec<_>>();
         assert!(events.contains(&NetworkEvent::Message(Message {
             src: peer1.my_id().unwrap(),
-            data: vec![123, 32, 51].into_boxed_slice(),
+            data: vec![123, 32, 51],
         })))
     }
 
@@ -296,7 +299,7 @@ mod test {
         peer1
             .send(
                 peer2.my_id().unwrap(),
-                &[123, 32, 51],
+                vec![123, 32, 51],
                 Reliability::Reliable,
             )
             .unwrap();
@@ -304,7 +307,7 @@ mod test {
         let events = peer2.recv().collect::<Vec<_>>();
         assert!(events.contains(&NetworkEvent::Message(Message {
             src: peer1.my_id().unwrap(),
-            data: vec![123, 32, 51].into_boxed_slice(),
+            data: vec![123, 32, 51],
         })))
     }
 
@@ -324,7 +327,7 @@ mod test {
         peer1
             .send(
                 peer2.my_id().unwrap(),
-                &[123, 32, 51],
+                vec![123, 32, 51],
                 Reliability::Reliable,
             )
             .unwrap();
@@ -332,7 +335,7 @@ mod test {
         let events = peer2.recv().collect::<Vec<_>>();
         assert!(events.contains(&NetworkEvent::Message(Message {
             src: peer1.my_id().unwrap(),
-            data: vec![123, 32, 51].into_boxed_slice(),
+            data: vec![123, 32, 51],
         })))
     }
 }

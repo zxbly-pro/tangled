@@ -75,7 +75,7 @@ async fn main() {
                     continue;
                 }
                 println!("Sent to {}", destination);
-                peer.send(destination, &data, Reliability::Reliable)
+                peer.send(destination, data.to_vec(), Reliability::Reliable)
                     .unwrap();
             }
         }
