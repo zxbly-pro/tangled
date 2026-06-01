@@ -3,7 +3,7 @@ name = "tangled"
 version = "0.6.0"
 edition = "2024"
 license = "MIT OR Apache-2.0"
-repository = "https://github.com/IntQuant/tangled"
+repository = "https://github.com/zxbly-pro/tangled"
 categories = ["network-programming", ]
 description = "Work-in-progress UDP networking crate."
 
